@@ -6,15 +6,15 @@ This repository hosts both the data and corresponding interpolation scripts for 
 
 ```
 
-from Interpolator import CvirModel
+from Interpolator import CvirModel, avail_sims
 import numpy as np
 
-print("List of available sims is " + str(Interpolator.avail_sims))
+print("List of available sims is " + str(avail_sims))
 
 Mvir = 10**np.linspace(9, 14.5, 100) #in units of Msun/h
 
 model = CvirModel(sim = 'TNG') #This loads + organizes the model parameters (KLLR slopes/intercepts)
-mean  = model.prediction(Mvir, z = 0.45, Omega_m = 0.35, sigma_8 = 0.85, SN1 = 2, AGN1 = 0.8, SN2 = 2, AGN2 = 0.5) #Now make the actual prediction
+mean  = model.predict(Mvir, z = 0.45, Omega_m = 0.35, sigma_8 = 0.85, SN1 = 2, AGN1 = 0.8, SN2 = 2, AGN2 = 0.5) #Now make the actual prediction
 
 ```
 

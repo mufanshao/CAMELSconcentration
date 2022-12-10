@@ -16,7 +16,7 @@ class CvirModel(object):
         predictions for each Mvir and z, given a set of input simulation parameters.
         The 100 predictions correspond to theoretical variation due to statistical uncertainty.
         '''
-        
+
         if sim not in avail_sims:
 
             raise ValueError("Requested sim, %s, is not available. Choose one of "%sim + str(avail_sims))
@@ -33,12 +33,12 @@ class CvirModel(object):
         Mvir_in   = []
         z_in      = []
 
-        redshifts = np.loadtxt(cwd_path + '/Data/Snapshot_redshift_index.txt')
+        redshifts = np.loadtxt(cwd_path + '/../Data/Snapshot_redshift_index.txt')
         scale_fac = 1/(redshifts[:, 1] + 1)
 
         #Load all necessary quantities at once outside any likelihood function
         for i in range(34):
-            model_tmp = np.load(cwd_path + '/Data/%s/Model_snap%d.npz'%(self.sim, i))
+            model_tmp = np.load(cwd_path + '/../Data/%s/Model_snap%d.npz'%(self.sim, i))
             intercept.append(model_tmp['intercept'])
             slopes.append(model_tmp['slopes'])
             Mvir_in.append(model_tmp['x'])
@@ -90,7 +90,7 @@ class CvirModel(object):
         self.Mvir_in   = np.ma.MaskedArray(data = Mvir_in,   mask = np.isnan(Mvir_in))
         self.z_in      = np.ma.MaskedArray(data = z_in,      mask = np.isnan(Mvir_in))
 
-        self.input_Mvir_and_z = (Mvir_in[-1], np.log10(scale_fac)[::-1])
+        self.input_Mvir_and_z = (Mvir_in[-1], np.log10(scale_fac))
 
 
     def predict(self, Mvir, z, Omega_m, sigma_8, SN1, AGN1, SN2, AGN2):
@@ -153,11 +153,17 @@ class CvirModel(object):
         else:
             theta = [Omega_m, sigma_8, SN1, AGN1, SN2, AGN2]
 
-        theory  = self.intercept.copy()
-        theory += self.Mvir_in*slopes[:, :, :, 0]
-        theory += np.sum(np.log10(theta)[None, None, :]*slopes[:, :, :, 1:], axis = -1)
+        theory =  self.intercept[:, :, :].copy()
+        theory += self.Mvir_in[:, None, :]*self.slopes[:, :, :, 0]
+        theory += np.sum(np.log10(theta)[None, None, :]*self.slopes[:, :, :, 1:], axis = -1)
 
-        cvir = interpolate.interpn(self.input_Mvir_and_z, theory.data.T[:, ::-1],
-                                   np.vstack([Mvir, np.log10(a)]).T)
+        #Swap so that bootstrap is first axis
+        theory  = np.swapaxes(theory, 1, 0)
 
-        return cvir
+        #Use bounds_error=False. Instead, the output will be np.NaN
+        #when we cannot interpolate
+        cvir = interpolate.interpn(self.input_Mvir_and_z, theory.data.T,
+                                   np.vstack([Mvir, np.log10(a)]).T,
+                                   bounds_error = False)
+
+        return 10**cvir.T

@@ -131,8 +131,8 @@ class CvirModel(object):
 
         numpy array:
 
-            Array of dimension (100, Mvir.size), where the 100 predictions
-            provide the statistical uncertainty in the prediction.
+            Array of cvir (linear, not log). The array has dimension (100, Mvir.size),
+            where the 100 predictions provide the statistical uncertainty in the prediction.
             If a requested Mvir or z value is outside the interpolation range,
             the corresponding entry in the output will contain np.NaN values.
 

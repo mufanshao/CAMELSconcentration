@@ -42,13 +42,16 @@ class CvirModel(object):
             intercept.append(model_tmp['intercept'])
             slopes.append(model_tmp['slopes'])
             Mvir_in.append(model_tmp['x'])
-            z_in.append(np.ones(37)*np.log10(1 + redshifts[i, 1]))
 
         #The maximum number of x-values in any redshift
         #this is equal to 37 for our data (z = 0 has most Mvir points)
-        max_xnum = slopes[33].shape[1]
+        max_ind  = np.argmax([slopes[i].shape[1] for i in range(34)])
+        max_xnum = slopes[max_ind].shape[1]
 
-        #loop over all redshifts
+        #Load redshifts outside first set because we need to know the max halo counts
+        for i in range(34): z_in.append(np.ones(max_xnum)*np.log10(1 + redshifts[i, 1]))
+
+        #loop over all redshifts and postprocess
         for i in range(34):
 
             #First copy the intercepts at this redshift
@@ -59,19 +62,19 @@ class CvirModel(object):
             append_length = max_xnum - here.shape[1]
 
             #Add extra columns to array and fill with empty np.NaN values
-            here = np.append(here, np.zeros_like(intercept[33])[:, :append_length] + np.NaN, axis = 1)
+            here = np.append(here, np.zeros_like(intercept[max_ind])[:, :append_length] + np.NaN, axis = 1)
 
             #Write the new array back into intercept
             intercept[i] = here
 
             #Do the same for slopes
             here = slopes[i].copy()
-            here = np.append(here, np.zeros_like(slopes[33])[:, :append_length, :] + np.NaN, axis = 1)
+            here = np.append(here, np.zeros_like(slopes[max_ind])[:, :append_length, :] + np.NaN, axis = 1)
             slopes[i] = here
 
             #Do the same for the input Mvir
             here = Mvir_in[i].copy()
-            here = np.append(here, np.zeros_like(Mvir_in[33])[:append_length] + np.NaN, axis = 0)
+            here = np.append(here, np.zeros_like(Mvir_in[max_ind])[:append_length] + np.NaN, axis = 0)
             Mvir_in[i] = here
 
         #Now convert from list to numpy array
